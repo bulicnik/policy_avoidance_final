@@ -1,0 +1,7 @@
+.venv/
+__pycache__/
+*.py[cod]
+.RData
+.Rhistory
+data/private/*.csv
+results/model_fits/

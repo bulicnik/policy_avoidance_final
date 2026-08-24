@@ -1,0 +1,9 @@
+model_key,table_label,stan_file,parameter_count,precomputed_bic_file
+Mazur_c,Mazur,indifference_model_Mazur_c.stan,2,mazur.csv
+Rachlin_c,Rachlin,indifference_model_Rachlin_c.stan,3,rachlin.csv
+Meyerson_Green_c,Meyerson-Green,indifference_model_Meyerson_Green_c.stan,3,meyerson_green.csv
+Mazur_CW_k,Mazur CW-k,indifference_model_Mazur_CW_k.stan,3,mazur_conditionwise_k.csv
+Meyerson_Green_CW_k,Meyerson-Green CW-k,indifference_model_Meyerson_Green_CW_k.stan,4,meyerson_green_conditionwise_k.csv
+Rachlin_CW_k,Rachlin CW-k,indifference_model_Rachlin_CW_k.stan,4,rachlin_conditionwise_k.csv
+Meyerson_Green_CW_k+s,Meyerson-Green CW-k+s,indifference_model_Meyerson_Green_CW_k+s.stan,5,meyerson_green_conditionwise_k_and_s.csv
+Rachlin_CW_k+s,Rachlin CW-k+s,indifference_model_Rachlin_CW_k+s.stan,5,rachlin_conditionwise_k_and_s.csv

@@ -1,0 +1,19 @@
+original_path,final_path,treatment
+Data/RinputClean.csv,data/cmdt_trials.csv,byte-for-byte copy with clearer filename
+Data/WSLL3.csv,data/behavioral_task_trials.csv,byte-for-byte copy with clearer filename
+Data/final/resultMazur_c_final.csv,data/model_comparison_bic/mazur.csv,byte-for-byte copy with clearer filename
+Data/final/resultRachlin_c_final.csv,data/model_comparison_bic/rachlin.csv,byte-for-byte copy with clearer filename
+Data/final/resultMeyerson_Green_c_final.csv,data/model_comparison_bic/meyerson_green.csv,byte-for-byte copy with clearer filename
+Data/final/resultMazur_CW_k_final.csv,data/model_comparison_bic/mazur_conditionwise_k.csv,byte-for-byte copy with clearer filename
+Data/final/resultMeyerson_Green_CW_k_final.csv,data/model_comparison_bic/meyerson_green_conditionwise_k.csv,byte-for-byte copy with clearer filename
+Data/final/resultRachlin_CW_k_final.csv,data/model_comparison_bic/rachlin_conditionwise_k.csv,byte-for-byte copy with clearer filename
+Data/final/resultMeyerson_Green_CW_k+s_final.csv,data/model_comparison_bic/meyerson_green_conditionwise_k_and_s.csv,byte-for-byte copy with clearer filename
+Data/final/resultRachlin_CW_k+s_final.csv,data/model_comparison_bic/rachlin_conditionwise_k_and_s.csv,byte-for-byte copy with clearer filename
+KCorona/RIndifferenceCalculation.R,analysis/fit_discounting_models.R,unused blocks removed and paths/output names clarified
+PythonCode/models/ModelFitComparisonByTask.py,analysis/compare_discounting_models.py,unused pairwise and VIF sections removed and final eight-model inputs corrected
+PythonCode/models/BetweenKTest.py,analysis/cmdt_behavioral_analysis.py,paths/output names clarified and manuscript descriptives added
+PythonCode/models/conditiontest.py,analysis/cross_task_mixed_models.py,unreachable final-block section removed and manuscript UP models enabled
+PythonCode/models/glmerBinom.R,analysis/glmer_binomial.R,unchanged helper copied under clearer filename
+PythonCode/models/DemographicEFA.py,analysis/survey_efa_and_factor_models.py,paths/output names clarified and undefined display-only calls removed
+PythonCode/models/coronaplots.py,analysis/plot_mixed_gamble.py,unused legacy model imports/data loads removed
+PythonCode/models/ParameterPlotting.py,analysis/plot_cmdt_up_and_factors.py,unused exploratory plots removed and final figure outputs clarified
