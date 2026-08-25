@@ -9,18 +9,27 @@ import shutil
 
 ROOT = Path(__file__).resolve().parents[1]
 output_folder = ROOT / "results" / "efa"
-survey_input = ROOT / "data" / "private" / "covid_survey_responses.csv"
+survey_input = ROOT / "data" / "survey_responses_deidentified.csv"
 behavioral_input = ROOT / "data" / "behavioral_task_trials.csv"
 
 if not survey_input.exists():
     raise FileNotFoundError(
-        f"Missing private survey input: {survey_input}\n"
-        "See data/private/README.md before running this analysis."
+        f"Missing deidentified survey input: {survey_input}\n"
+        "Create data/survey_responses_deidentified.csv before running this analysis."
     )
 
 debug = False
 demograghic_raw = pd.read_csv(survey_input)
-demograghic_raw = demograghic_raw.drop(columns=["openness", "conscientiousness","agreeableness", "extroversion", 'emotional_stability'])
+demograghic_raw = demograghic_raw.drop(
+    columns=[
+        "openness",
+        "conscientiousness",
+        "agreeableness",
+        "extroversion",
+        "emotional_stability",
+    ],
+    errors="ignore",
+)
 demograghic_filtered = demograghic_raw.iloc[0:124,:]
 demograghic_filtered = demograghic_filtered.rename(columns={
     'Q118': 'personal_danger',
@@ -77,10 +86,9 @@ full_df_with_demo_performance = full_df_with_demo
 
 likert_sections = ['heal', 'd', 'ec', 'Soc', 'Prep', 'stigma','avoid', 'risk',
                    'moral', 'animal', 'people']
-model_df = full_df_with_demo_performance[[
-    'age', 'rural', 'suburban', 'urban', 'sex',
-    'ID', 'k_social', 'k_no_social', 's',
-]].copy()
+model_df = full_df_with_demo_performance[
+    ["analysis_included", "ID", "k_social", "k_no_social", "s"]
+].copy()
 
 
 orphan_items = [ 'personal_danger']
@@ -1364,7 +1372,11 @@ model_df, first_order_loadings, efa_vaccounted, efa_fit = run_Dimension_Reductio
     likert_sections, model_df, cleaned_demo_df, orphan_items, model_type='full_efa'
 )
 
-model_df_clean = model_df.dropna()
+model_df_clean = (
+    model_df.loc[model_df["analysis_included"].eq(1)]
+    .drop(columns=["analysis_included"])
+    .dropna()
+)
 #model_df_SO, df_SO, SO_loadings = run_second_order_PCA(model_df_clean,likert_sections, ['personal_danger_z',"IUSScore_z",'political_orientation_z'])
 #summary_df, posterior_samples, best_lo = run_bayesian_fixed_effect_analysis(model_df_clean)
 dep_variables = ['k_social', 'k_no_social', 's']
