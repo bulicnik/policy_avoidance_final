@@ -1,16 +1,14 @@
 # Policy Avoidance During COVID-19
 
-This repository contains the analyses and final-draft artifacts for **“Policy
-Avoidance During COVID-19 Reflects Context-General Maladaptive
-Decision-Making.”**.
-
-
+Data, code, materials, and results for *Policy Avoidance During COVID-19 Reflects
+Context-General Maladaptive Decision-Making*.
 
 ## Repository contents
 
 - `analysis/`: scripts used for the final CMDT, cross-task, EFA, and plotting analyses.
 - `data/cmdt_trials.csv`: 20,412 CMDT trials (243 participants × 84 trials).
 - `data/behavioral_task_trials.csv`: mixed-gamble and uncertainty-preference trial data with final CMDT parameters.
+- `data/survey_responses_deidentified.csv`: 124 survey records, including political orientation; see [data notes](data/README.md).
 - `data/model_comparison_bic/`: participant-level AIC/BIC tables for the eight final discounting models.
 - `models/`: the eight Stan model definitions and a model manifest.
 - `materials/`: the CMDT Qualtrics guide and COVID-19 attitude/behavior survey instrument.
@@ -19,7 +17,8 @@ Decision-Making.”**.
 
 ## Software setup
 
-Python 3.11 or later and R are required. From the repository root:
+The pinned packages require Python 3.12 or later. R is also required. From the
+repository root:
 
 ```bash
 python -m venv .venv
@@ -37,21 +36,25 @@ Install the required R packages once:
 ```r
 install.packages(c(
   "rstan", "bayesplot", "loo", "lme4", "lmerTest",
-  "dplyr", "psych", "tidyverse"
+  "dplyr", "psych", "nFactors", "GPArotation", "tidyverse"
 ))
 ```
 
-`requirements.txt` records the Python versions used for the validation run in
-this repository. 
+Keep `Rscript` on your system path. On Windows, if Python cannot locate R, set
+`R_HOME` to your R installation folder before running Python.
+
+Python package versions are pinned in `requirements.txt`; tested versions and
+validation scope are recorded in [VALIDATION.md](VALIDATION.md).
 
 ## Reproducing the analyses
 
-Run commands from the repository root in the order below. The repository
-already includes the final outputs used in the paper, so the expensive Stan
-fits do not have to be rerun unless a full computational reproduction is
-desired.
+Run commands from the repository root. The survey analyses use only the public
+files; the original survey export containing identifiers is not needed.
 
-### 1. Fit the CMDT discounting models 
+Downstream analyses use the supplied fitted parameters and BIC tables. Step 1
+is optional and saves new fits separately; it does not replace those inputs.
+
+### 1. Refit the CMDT discounting models (optional)
 
 The command accepts one model key from `models/model_manifest.csv`:
 
@@ -104,34 +107,66 @@ uncertainty-preference tables are written to
 
 ### 5. Reproduce the survey EFA and factor models
 
-The original survey file contains MTurk IDs and other potentially identifying
-fields, so it is not included in this public-ready copy. Place the original
-`DemographicData.csv` at
-`data/private/covid_survey_responses.csv`, as described in
-`data/private/README.md`, then run:
+The deidentified survey responses are included in
+`data/survey_responses_deidentified.csv`. Run:
 
 ```powershell
 python analysis/survey_efa_and_factor_models.py
 ```
 
-The script retains the first 124 survey participants, applies the original item
-recoding, performs oblimin-rotated EFA, retains five factors for the final
-solution, and fits the factor regressions for social policy avoidance, baseline
-policy avoidance, cost sensitivity, and factor × social-support interactions.
-Outputs are written to `results/efa/`.
+The script recodes the 124 survey records and fits a five-factor EFA using
+maximum likelihood and oblimin rotation. Parallel analysis recommends seven
+factors; the manuscript uses five based on the scree elbow and interpretability.
+Seed 42 fixes the parallel-analysis simulations.
 
-### 6. Reproduce manuscript figures
+The factor regressions use 118 complete cases after applying the original
+`analysis_included` flag. Outputs in `results/efa/` include loadings, fit
+statistics, three factor regressions, and all five factor × social-support
+tests in `condition_interactions.csv`. The significant subset is also saved.
+
+### 6. Reproduce political-orientation models
+
+```powershell
+Rscript analysis/political_orientation_models.R
+```
+
+The script matches `political_orientation` (original item `Q207`) to behavioral
+parameters by `ID` and applies `analysis_included`, yielding 119 complete cases.
+Political orientation runs from 1 (very liberal) to 5 (very conservative) and
+is centered at the neutral midpoint, 3.
+
+Policy avoidance uses a participant random intercept and a political
+orientation × support-condition interaction; no support is the reference.
+Cost sensitivity uses a participant-level linear regression. Outcomes are
+standardized, so slopes represent outcome standard deviations per one-point
+increase toward conservatism. Tests are two-sided and unadjusted.
+
+`results/political_orientation/parameter_associations.csv` contains coefficients,
+95% confidence intervals, tests, and sample sizes; `model_summary.txt` includes
+model summaries and R package versions. This script runs independently of EFA.
+
+### 7. Reproduce manuscript figures
 
 ```powershell
 python analysis/plot_mixed_gamble.py
 python analysis/plot_cmdt_up_and_factors.py
 ```
 
-The first command recreates the nine Figure 4 panels. The second recreates
-Figures 3, 5, and 6. The exact raster images embedded in the final Word draft
-are retained in `results/figures/` for comparison; regenerated output goes to
-descriptively named subfolders under the same directory. Figure 1 is based on
-the task materials, and Figure 2 is also retained as the EFA scree-plot output.
+The first command recreates the nine Figure 4 panels; the second recreates
+Figures 3, 5, and 6. Original manuscript images remain in `results/figures/`;
+regenerated plots use subfolders. Figure 1 uses the task materials. The EFA
+script regenerates Figure 2's scree plot as `results/efa/scree_plot.png`.
+
+### Check the public data and results
+
+After running the survey and political-orientation scripts:
+
+```powershell
+python -m unittest discover -s tests -v
+```
+
+These checks validate the shared inputs and key manuscript statistics. They do
+not refit models; see [VALIDATION.md](VALIDATION.md) for the execution checks.
 
 ## Paper-to-code map
 
@@ -142,7 +177,8 @@ the task materials, and Figure 2 is also retained as the EFA scree-plot output.
 | Supplement S4 model selection | `analysis/compare_discounting_models.py` | `data/model_comparison_bic/` | `results/cmdt/table_s4_model_comparison.csv` |
 | Mixed-gamble GLMMs | `analysis/cross_task_mixed_models.py` | `data/behavioral_task_trials.csv` | `results/mixed_gamble/` |
 | Uncertainty-preference GLMMs | `analysis/cross_task_mixed_models.py` | `data/behavioral_task_trials.csv` | `results/uncertainty_preference/` |
-| Survey EFA and factor regressions | `analysis/survey_efa_and_factor_models.py` | private survey input, behavioral parameters | `results/efa/` |
+| Survey EFA and factor regressions | `analysis/survey_efa_and_factor_models.py` | public survey responses, behavioral parameters | `results/efa/` |
+| Political-orientation models | `analysis/political_orientation_models.R` | public survey responses, behavioral parameters | `results/political_orientation/` |
 | Figures 3, 5, and 6 | `analysis/plot_cmdt_up_and_factors.py` | behavioral/CMDT data and EFA tables | `results/figures/regenerated/` |
 | Figure 4 | `analysis/plot_mixed_gamble.py` | `data/behavioral_task_trials.csv` | `results/figures/figure4_panels/` |
 

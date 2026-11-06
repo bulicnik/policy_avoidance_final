@@ -8,6 +8,7 @@ from pathlib import Path
 import shutil
 
 ROOT = Path(__file__).resolve().parents[1]
+PARALLEL_ANALYSIS_SEED = 42
 output_folder = ROOT / "results" / "efa"
 survey_input = ROOT / "data" / "survey_responses_deidentified.csv"
 behavioral_input = ROOT / "data" / "behavioral_task_trials.csv"
@@ -15,7 +16,7 @@ behavioral_input = ROOT / "data" / "behavioral_task_trials.csv"
 if not survey_input.exists():
     raise FileNotFoundError(
         f"Missing deidentified survey input: {survey_input}\n"
-        "Create data/survey_responses_deidentified.csv before running this analysis."
+        "Restore data/survey_responses_deidentified.csv from the repository before running this analysis."
     )
 
 debug = False
@@ -395,7 +396,7 @@ def run_Dimension_Reduction(likert_sections, model_df, behavioral_df, orphan_ite
             plot = FALSE
         )
 
-        # Retention is determined by PA
+        # Report the PA recommendation separately from the five-factor fit.
         num_factors <- fa_parallel$nfact
 
         # Table of observed vs simulated eigenvalues for reporting
@@ -449,7 +450,7 @@ def run_Dimension_Reduction(likert_sections, model_df, behavioral_df, orphan_ite
 
         fa_result_obj <- fa(
             cor_matrix,
-            nfactors = 5, #use num_factors if you want to simply apply the PA result. We keep 5 here because it is a visual elbow,
+            nfactors = 5, # Final manuscript solution: scree elbow and interpretability.
             n.obs = nrow(items),
             fm = "ml",
             rotate = "oblimin"
@@ -507,7 +508,8 @@ def run_Dimension_Reduction(likert_sections, model_df, behavioral_df, orphan_ite
 
         # One-row fit + retention summary
         efa_fit <- data.frame(
-            retained_n_factors = num_factors,
+            parallel_analysis_n_factors = num_factors,
+            fitted_n_factors = 5,
             n_obs = nrow(items),
             n_items = ncol(items),
             pa_last_retained_observed = parallel_results$Observed[num_factors],
@@ -1158,23 +1160,25 @@ def fit_factors_long_brms_model(df, factors):
 
 def fit_factors_long_lmer_model(df, factors):
     """
-    Fits a model in R (no random effect for ID) using rpy2.
+    Fit each factor-by-condition model with a participant random intercept.
 
     Parameters
     ----------
     df : pandas.DataFrame
-        Must have columns: ['ID', 'k_social', 'k_no_social' , 'full_1', 'full_2', 'full_3', 'full_4', 'full_5']
+        Participant ID, k_social, k_no_social, and the requested factor scores.
+    factors : iterable of str
+        Names of the factor-score columns.
 
     Returns
     -------
-    significant_results : list of dict
-        Significant interaction results.
+    interaction_results : list of dict
+        All factor-by-condition interaction tests, including nonsignificant tests.
     """
 
     # Send pandas DataFrame to R
     ro.globalenv['Rinput1'] = py_to_r(df)
 
-    significant_results = []
+    interaction_results = []
 
     for factor in factors:
         r_code_fit = f"""
@@ -1238,22 +1242,21 @@ def fit_factors_long_lmer_model(df, factors):
                 f"  95% CI   = [{l95:.3f}, {u95:.3f}]"
             )
 
-            if l95 > 0 or u95 < 0:
-                significant_results.append({
-                    'factor': factor,
-                    'term': interaction_rows.index[0],
-                    'estimate': estimate,
-                    'tval': tval,
-                    'df_val': df_val,
-                    'pval': pval,
-                    'se': se,
-                    'l95': l95,
-                    'u95': u95
-                })
+            interaction_results.append({
+                'factor': factor,
+                'term': interaction_row['term'],
+                'estimate': estimate,
+                'tval': tval,
+                'df_val': df_val,
+                'pval': pval,
+                'se': se,
+                'l95': l95,
+                'u95': u95
+            })
         else:
             print(f"\nNo interaction term found for {factor}")
 
-    return significant_results
+    return interaction_results
 
 
 def py_to_r(obj):
@@ -1368,6 +1371,9 @@ full_df_with_demo_performance, mapping = recode_to_consecutive(full_df_with_demo
 problems = identify_problematic_items(full_df_with_demo_performance[cols_to_recode])
 cleaned_demo_df = drop_problematic_items(full_df_with_demo_performance, problems)
 
+# A fixed seed and one worker make the simulated PA reference repeatable.
+r(f"set.seed({PARALLEL_ANALYSIS_SEED})")
+r("options(mc.cores = 1)")
 model_df, first_order_loadings, efa_vaccounted, efa_fit = run_Dimension_Reduction(
     likert_sections, model_df, cleaned_demo_df, orphan_items, model_type='full_efa'
 )
@@ -1377,6 +1383,8 @@ model_df_clean = (
     .drop(columns=["analysis_included"])
     .dropna()
 )
+efa_fit["parallel_analysis_seed"] = PARALLEL_ANALYSIS_SEED
+efa_fit["n_regression_obs"] = len(model_df_clean)
 #model_df_SO, df_SO, SO_loadings = run_second_order_PCA(model_df_clean,likert_sections, ['personal_danger_z',"IUSScore_z",'political_orientation_z'])
 #summary_df, posterior_samples, best_lo = run_bayesian_fixed_effect_analysis(model_df_clean)
 dep_variables = ['k_social', 'k_no_social', 's']
@@ -1399,9 +1407,10 @@ save_list_of_dfs(
     filepath=output_folder
 )
 save_list_of_dfs(first_order_loadings, ['factor_loadings'], filepath=output_folder, index=True)
-significant_results = fit_factors_long_lmer_model(model_df_clean, full_efa_factor_names)
-if significant_results:
-    save_list_of_dfs(pd.DataFrame(significant_results), ['significant_condition_interactions'], filepath=output_folder)
+interaction_results = pd.DataFrame(fit_factors_long_lmer_model(model_df_clean, full_efa_factor_names))
+save_list_of_dfs(interaction_results, ['condition_interactions'], filepath=output_folder)
+significant_results = interaction_results.loc[interaction_results["pval"].lt(0.05)]
+save_list_of_dfs(significant_results, ['significant_condition_interactions'], filepath=output_folder)
 save_list_of_dfs(efa_vaccounted, ['variance_accounted'], filepath=output_folder, index=True)
 save_list_of_dfs(efa_fit, ['fit_summary'], filepath=output_folder, index=False)
 
