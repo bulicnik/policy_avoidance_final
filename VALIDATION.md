@@ -14,14 +14,24 @@ models.
   recommends seven factors.
 - The political-orientation script completed with 119 participants and reproduced
   the manuscript's reported slopes, tests, and p-values.
-- All seven automated tests passed. They check documentation links, participant links, eligibility,
-  sample sizes, factor results, interaction labels, and political-model results.
-- All 11 input CSV files were unchanged by the execution checks.
+- All eight automated tests passed. They check documentation links, participant
+  links, task columns, eligibility, sample sizes, factor results, interaction
+  labels, and political-model results.
+- The earlier model execution checks did not modify any of the 11 input CSV files.
 
 The EFA uses 124 records; the factor regressions and interactions use 118
 complete cases. All five interaction tests are now exported, not just the
 significant subset. `fit_summary.csv` separately records the parallel-analysis
 recommendation, fitted factor count, seed, and regression sample size.
+
+## SGT column cleanup
+
+Removed SGTBinChoice, SGTFreqVsValue, and SGTReward from the behavioral CSV
+because the SGT was not used in this project. An exact comparison against the
+previous committed dataset confirmed that all 24,300 rows, their order, and
+every value in the remaining 23 columns were preserved. No analysis script
+references the removed columns. The automated checks now reject SGT columns
+while requiring the mixed-gamble and uncertainty-preference fields.
 
 ## Environment and limits
 

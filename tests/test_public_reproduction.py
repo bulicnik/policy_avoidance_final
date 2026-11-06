@@ -1,6 +1,7 @@
 """Check public inputs and regenerated survey results without private data."""
 
 import csv
+from collections import Counter
 from pathlib import Path
 import re
 import unittest
@@ -15,6 +16,21 @@ def rows(relative):
 
 
 class PublicReproductionTests(unittest.TestCase):
+    def test_behavioral_project_columns(self):
+        behavioral = rows("data/behavioral_task_trials.csv")
+        columns = set(behavioral[0])
+        self.assertEqual(len(behavioral), 24300)
+        self.assertEqual(len(columns), 23)
+        self.assertFalse(any(column.upper().startswith("SGT") for column in columns))
+        self.assertTrue({
+            "ID", "Block", "UniBinChoice", "UniReward",
+            "MGBinChoice", "MGGain", "MGLoss", "MGValue",
+            "k_social", "k_no_social", "s",
+        } <= columns)
+        counts = Counter(row["ID"] for row in behavioral)
+        self.assertEqual(len(counts), 243)
+        self.assertEqual(set(counts.values()), {100})
+
     def test_documentation_links(self):
         for relative in ["README.md", "data/README.md", "VALIDATION.md"]:
             document = ROOT / relative

@@ -1,7 +1,7 @@
 original_path,final_path,treatment
 Data/DemographicData.csv,data/survey_responses_deidentified.csv,first 124 survey records with analytic items and numeric participant IDs; direct identifiers omitted; original complete-case eligibility retained as analysis_included; Q207 renamed political_orientation
 Data/RinputClean.csv,data/cmdt_trials.csv,byte-for-byte copy with clearer filename
-Data/WSLL3.csv,data/behavioral_task_trials.csv,byte-for-byte copy with clearer filename
+Data/WSLL3.csv,data/behavioral_task_trials.csv,renamed; unused SGT columns removed; all rows and remaining values preserved
 Data/final/resultMazur_c_final.csv,data/model_comparison_bic/mazur.csv,byte-for-byte copy with clearer filename
 Data/final/resultRachlin_c_final.csv,data/model_comparison_bic/rachlin.csv,byte-for-byte copy with clearer filename
 Data/final/resultMeyerson_Green_c_final.csv,data/model_comparison_bic/meyerson_green.csv,byte-for-byte copy with clearer filename

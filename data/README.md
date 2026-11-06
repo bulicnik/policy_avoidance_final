@@ -1,4 +1,13 @@
-# Survey data notes
+# Data notes
+
+## Behavioral trials
+
+The behavioral trial file contains 24,300 rows: 100 trials for each of 243
+participants. It retains the mixed-gamble and uncertainty-preference data and
+CMDT parameters used in this project. The unused SGT columns (SGTBinChoice,
+SGTFreqVsValue, and SGTReward) are excluded.
+
+## Survey responses
 
 `survey_responses_deidentified.csv` contains 124 survey records. The original
 export containing MTurk IDs and other identifying fields is not required by
